@@ -21,9 +21,17 @@ TestCase {
         tryVerify(function() { return calendar.selectedSubLabel.length > 0; });
         for (const theme of ["dark", "light"]) {
             calendar.themeMode = theme;
-            wait(300);
-            const image = grabImage(calendar);
-            image.save(Qt.resolvedUrl("../docs/screenshots/almanac-" + theme + ".png").toString().replace("file://", ""));
+            save("almanac-" + theme);
         }
+        // Quick-jump month picker.
+        calendar.themeMode = "dark";
+        calendar.togglePicker();
+        save("almanac-picker");
+        calendar.togglePicker();
+        calendar.togglePicker();
+    }
+    function save(name) {
+        wait(300);
+        grabImage(calendar).save(Qt.resolvedUrl("../docs/screenshots/" + name + ".png").toString().replace("file://", ""));
     }
 }

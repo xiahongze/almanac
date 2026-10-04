@@ -2,9 +2,15 @@
 
 A Plasma 6 desktop widget that shows each Gregorian day alongside an alternate calendar. Chinese lunar dates are the default. Other systems supported by Plasma's alternate-calendar plugin (Islamic, Hebrew, Persian, Indian national, Japanese and others) work through the same code path.
 
+[![CI](https://github.com/xiahongze/almanac/actions/workflows/ci.yml/badge.svg)](https://github.com/xiahongze/almanac/actions/workflows/ci.yml) ![Plasma 6](https://img.shields.io/badge/Plasma-6-1d99f3) ![License](https://img.shields.io/badge/license-MIT-22c55e)
+
 | Dark | Light |
 | --- | --- |
 | ![Almanac in dark mode](docs/screenshots/almanac-dark.png) | ![Almanac in light mode](docs/screenshots/almanac-light.png) |
+
+Click the month title to jump to another month or year:
+
+![Almanac month picker](docs/screenshots/almanac-picker.png)
 
 ## What it shows
 
