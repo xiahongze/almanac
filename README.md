@@ -8,7 +8,8 @@ A Plasma 6 desktop widget that shows each Gregorian day alongside an alternate c
 
 ## What it shows
 
-- **Header:** the month title, with ‹ Today › navigation. Scrolling over the grid also changes the month.
+- **Header:** the month title, with ‹ Today › navigation. Scrolling also changes the month.
+- **Quick jump:** click the month title (`October 2026 ▾`) to pick a month. Click the year to pick from a decade. While picking, ‹ › and scrolling move by a year or a decade. Browsing doesn't change your selected date, and **Today** jumps straight back.
 - **Grid:** six weeks, each day with its alternate date underneath. By default the alternate text is 80% of the day-number size, adjustable from 50% to 120%. Hover a day to see its full alternate date.
 - **Footer:** the selected date in full, with its alternate date, e.g. `Sunday, 4 October 2026 · 丙午八月廿四`.
 - **Today:** the highlight moves to the new date automatically. The widget checks every minute and whenever it becomes active again, so suspend/resume and timezone changes are covered. If you have selected a different date, your selection stays; clicking **Today** resumes following.

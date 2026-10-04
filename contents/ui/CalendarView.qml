@@ -25,6 +25,10 @@ Item {
     property string selectedSubLabel: ""
     property bool followToday: true
     readonly property alias displayedDate: backend.displayedDate
+    // "" shows days; "months" and "years" show the quick-jump picker.
+    property string pickerMode: ""
+    property int pickerYear: displayedDate.getFullYear()
+    readonly property int decadeStart: pickerYear - pickerYear % 10
     signal pinToggled()
 
     readonly property bool forcedDark: themeMode === "dark"
@@ -55,8 +59,48 @@ Item {
     }
 
     function goToToday() {
+        pickerMode = "";
         backend.resetToToday();
         selectDate(today);
+    }
+
+    function togglePicker() {
+        if (pickerMode === "") {
+            pickerYear = backend.displayedDate.getFullYear();
+            pickerMode = "months";
+        } else if (pickerMode === "months") {
+            pickerMode = "years";
+        } else {
+            pickerMode = "";
+        }
+    }
+
+    function previous() {
+        if (pickerMode === "months")
+            pickerYear -= 1;
+        else if (pickerMode === "years")
+            pickerYear -= 10;
+        else
+            backend.previousMonth();
+    }
+
+    function next() {
+        if (pickerMode === "months")
+            pickerYear += 1;
+        else if (pickerMode === "years")
+            pickerYear += 10;
+        else
+            backend.nextMonth();
+    }
+
+    function pickMonth(month) {
+        backend.goToYearAndMonth(pickerYear, month);
+        pickerMode = "";
+    }
+
+    function pickYear(year) {
+        pickerYear = year;
+        pickerMode = "months";
     }
 
     function checkRollover() {
@@ -97,17 +141,25 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 0
-            Text {
-                Layout.fillWidth: true
-                text: Qt.formatDate(backend.displayedDate, "MMMM yyyy")
-                color: root.colors.ink
-                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.5
-                elide: Text.ElideRight
+            // Click to jump: days → months → years → back to days.
+            NavButton {
+                objectName: "titleButton"
+                // Keep the title text flush with the grid and footer.
+                Layout.leftMargin: -Kirigami.Units.largeSpacing
+                text: root.pickerMode === "months" ? String(root.pickerYear)
+                    : root.pickerMode === "years" ? root.decadeStart + " – " + (root.decadeStart + 9)
+                    : Qt.formatDate(backend.displayedDate, "MMMM yyyy")
+                accessibleName: i18n("Choose month or year")
+                fontScale: 1.5
+                trailing: root.pickerMode === "years" ? "" : " ▾"
+                onClicked: root.togglePicker()
             }
+            Item { Layout.fillWidth: true }
             NavButton {
                 text: "‹"
-                accessibleName: i18n("Previous month")
-                onClicked: backend.previousMonth()
+                accessibleName: root.pickerMode === "months" ? i18n("Previous year")
+                    : root.pickerMode === "years" ? i18n("Previous decade") : i18n("Previous month")
+                onClicked: root.previous()
             }
             NavButton {
                 objectName: "todayButton"
@@ -116,8 +168,9 @@ Item {
             }
             NavButton {
                 text: "›"
-                accessibleName: i18n("Next month")
-                onClicked: backend.nextMonth()
+                accessibleName: root.pickerMode === "months" ? i18n("Next year")
+                    : root.pickerMode === "years" ? i18n("Next decade") : i18n("Next month")
+                onClicked: root.next()
             }
             Controls.ToolButton {
                 visible: !root.desktop
@@ -132,6 +185,7 @@ Item {
 
         // Weekday names.
         RowLayout {
+            visible: root.pickerMode === ""
             Layout.fillWidth: true
             spacing: 0
             Item { visible: root.showWeekNumbers; Layout.preferredWidth: grid.weekColumnWidth }
@@ -153,6 +207,7 @@ Item {
         // Day grid.
         Item {
             id: grid
+            visible: root.pickerMode === ""
             Layout.fillWidth: true
             Layout.fillHeight: true
             readonly property real weekColumnWidth: root.showWeekNumbers ? Kirigami.Units.gridUnit * 1.6 : 0
@@ -188,15 +243,34 @@ Item {
                     delegate: DayCell {}
                 }
             }
+        }
 
-            // Scroll through months like Plasma's own calendar.
-            WheelHandler {
-                property real accumulated: 0
-                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                onWheel: event => {
-                    accumulated += event.angleDelta.y;
-                    while (accumulated >= 120) { accumulated -= 120; backend.previousMonth(); }
-                    while (accumulated <= -120) { accumulated += 120; backend.nextMonth(); }
+        // Quick-jump picker: twelve months of pickerYear, or the years around a decade.
+        GridLayout {
+            objectName: "picker"
+            visible: root.pickerMode !== ""
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            columns: 3
+            rowSpacing: 0
+            columnSpacing: 0
+            Repeater {
+                model: 12
+                PickerCell {
+                    required property int index
+                    readonly property bool months: root.pickerMode === "months"
+                    // Years view pads the decade with one year either side.
+                    readonly property int year: root.decadeStart - 1 + index
+                    objectName: months ? "pickMonth-" + (index + 1) : "pickYear-" + year
+                    text: months ? Qt.locale().standaloneMonthName(index, Locale.ShortFormat) : String(year)
+                    current: months
+                        ? root.pickerYear === backend.displayedDate.getFullYear() && index === backend.displayedDate.getMonth()
+                        : year === backend.displayedDate.getFullYear()
+                    isToday: months
+                        ? root.pickerYear === root.today.getFullYear() && index === root.today.getMonth()
+                        : year === root.today.getFullYear()
+                    dimmed: !months && (index === 0 || index === 11)
+                    onClicked: months ? root.pickMonth(index + 1) : root.pickYear(year)
                 }
             }
         }
@@ -228,10 +302,23 @@ Item {
         }
     }
 
+    // Scroll through months, years or decades depending on the view.
+    WheelHandler {
+        property real accumulated: 0
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+            accumulated += event.angleDelta.y;
+            while (accumulated >= 120) { accumulated -= 120; root.previous(); }
+            while (accumulated <= -120) { accumulated += 120; root.next(); }
+        }
+    }
+
     // Drawn with the widget palette so forced light/dark themes stay legible.
     component NavButton: Rectangle {
         id: nav
         property string text
+        property string trailing
+        property real fontScale: text.length === 1 ? 1.6 : 1
         property string accessibleName: text
         signal clicked()
         implicitWidth: Math.max(label.implicitWidth + Kirigami.Units.largeSpacing * 2, implicitHeight)
@@ -244,9 +331,9 @@ Item {
         Text {
             id: label
             anchors.centerIn: parent
-            text: nav.text
+            text: nav.text + nav.trailing
             color: root.colors.ink
-            font.pixelSize: nav.text.length === 1 ? Kirigami.Theme.defaultFont.pixelSize * 1.6 : Kirigami.Theme.defaultFont.pixelSize
+            font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * nav.fontScale
         }
         MouseArea {
             id: navMouse
@@ -254,6 +341,42 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: nav.clicked()
+        }
+    }
+
+    component PickerCell: Item {
+        id: pick
+        property string text
+        property bool current
+        property bool isToday
+        property bool dimmed
+        signal clicked()
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.preferredWidth: 1
+        Layout.preferredHeight: 1
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 3
+            radius: Kirigami.Units.cornerRadius
+            color: pick.current ? Qt.alpha(root.colors.accent, 0.3)
+                 : pickMouse.containsMouse ? Qt.alpha(root.colors.ink, 0.08) : "transparent"
+            border.width: pick.isToday ? 2 : pick.current ? 1 : 0
+            border.color: root.colors.accent
+        }
+        Text {
+            anchors.centerIn: parent
+            text: pick.text
+            color: root.colors.ink
+            opacity: pick.dimmed ? 0.4 : 1
+            font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.4
+            font.bold: pick.isToday
+        }
+        MouseArea {
+            id: pickMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: pick.clicked()
         }
     }
 

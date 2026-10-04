@@ -87,4 +87,42 @@ TestCase {
         compare(calendar.displayedDate.getMonth(), 10);
         compare(calendar.followToday, false);
     }
+
+    function test_monthPickerJumps() {
+        const title = findChild(calendar, "titleButton");
+        mouseClick(title);
+        compare(calendar.pickerMode, "months");
+        compare(calendar.pickerYear, 2026);
+        calendar.next();
+        compare(calendar.pickerYear, 2027);
+        waitForRendering(calendar);
+        mouseClick(findChild(calendar, "pickMonth-3"));
+        compare(calendar.pickerMode, "");
+        compare(calendar.displayedDate.getFullYear(), 2027);
+        compare(calendar.displayedDate.getMonth(), 2);
+        // Browsing is not a selection, so today keeps being followed.
+        compare(calendar.followToday, true);
+        compare(calendar.selectedDate.getMonth(), 9);
+    }
+
+    function test_yearPickerJumps() {
+        const title = findChild(calendar, "titleButton");
+        mouseClick(title);
+        mouseClick(title);
+        compare(calendar.pickerMode, "years");
+        compare(calendar.decadeStart, 2020);
+        calendar.previous();
+        compare(calendar.decadeStart, 2010);
+        waitForRendering(calendar);
+        mouseClick(findChild(calendar, "pickYear-2015"));
+        compare(calendar.pickerMode, "months");
+        compare(calendar.pickerYear, 2015);
+        waitForRendering(calendar);
+        mouseClick(findChild(calendar, "pickMonth-6"));
+        compare(calendar.displayedDate.getFullYear(), 2015);
+        compare(calendar.displayedDate.getMonth(), 5);
+        mouseClick(findChild(calendar, "todayButton"));
+        compare(calendar.pickerMode, "");
+        compare(calendar.displayedDate.getFullYear(), 2026);
+    }
 }
