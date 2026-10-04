@@ -22,7 +22,7 @@ Click the month title to jump to another month or year:
 
 ## Requirements
 
-- Plasma 6 (`plasma-workspace` supplies the calendar QML module and the `alternatecalendar` plugin)
+- Plasma 6, with `plasma-workspace` (calendar QML module) and `kdeplasma-addons` (the `alternatecalendar` plugin)
 - `kpackagetool6`
 - Python 3, for packaging only
 
