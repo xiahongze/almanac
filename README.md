@@ -1,39 +1,73 @@
 # Almanac
 
-A Plasma 6 desktop widget showing Gregorian dates alongside an alternate calendar. Chinese lunar dates are the v1 default and the only alternate system covered by tests. The widget uses Plasma's generic calendar plugin, so other available systems also work without calendar-specific code.
+A Plasma 6 desktop widget that shows each Gregorian day alongside an alternate calendar. Chinese lunar dates are the default. Other systems supported by Plasma's alternate-calendar plugin (Islamic, Hebrew, Persian, Indian national, Japanese and others) work through the same code path.
 
-![Almanac in dark mode](docs/screenshots/almanac-dark.png)
-![Almanac in light mode](docs/screenshots/almanac-light.png)
+| Dark | Light |
+| --- | --- |
+| ![Almanac in dark mode](docs/screenshots/almanac-dark.png) | ![Almanac in light mode](docs/screenshots/almanac-light.png) |
 
-Almanac starts by following today. It checks the local date every minute and when application state changes, including after suspend. Selecting another date preserves that selection and the visible month while today's highlight continues to advance. Click **Today** to resume following. There is no events pane; only the alternate-calendar plugin is enabled.
+## What it shows
+
+- **Header:** the month title, with ‹ Today › navigation. Scrolling over the grid also changes the month.
+- **Grid:** six weeks, each day with its alternate date underneath. By default the alternate text is 80% of the day-number size, adjustable from 50% to 120%. Hover a day to see its full alternate date.
+- **Footer:** the selected date in full, with its alternate date, e.g. `Sunday, 4 October 2026 · 丙午八月廿四`.
+- **Today:** the highlight moves to the new date automatically. The widget checks every minute and whenever it becomes active again, so suspend/resume and timezone changes are covered. If you have selected a different date, your selection stays; clicking **Today** resumes following.
+
+## Requirements
+
+- Plasma 6 (`plasma-workspace` supplies the calendar QML module and the `alternatecalendar` plugin)
+- `kpackagetool6`
+- Python 3, for packaging only
 
 ## Install
 
-Requires Plasma 6, its workspace calendar QML module and alternate-calendar plugin, Python 3 (packaging only), `kpackagetool6`, and optionally `kbuildsycoca6`.
+Download `almanac.plasmoid` from a release and run `kpackagetool6 --type Plasma/Applet --install almanac.plasmoid`, or build it from the repo:
 
 ```sh
-make install
+./scripts/install.sh
 ```
 
-Add **Almanac** from Plasma's widget picker. On the desktop it displays the full calendar; in a panel it displays a date icon opening the same calendar. The popup's pin button keeps it open when focus changes.
+Then add **Almanac** from the widget picker. On the desktop it shows the full calendar. In a panel it shows a date icon that opens the calendar, and the pin button keeps that popup open.
 
-In **Configure Almanac → General**, choose System, Light, or Dark, desktop opacity, week numbers, and popup pinning. The **Calendar system** section loads Plasma's own plugin settings. Select **Chinese** for lunar dates. Existing calendar settings are respected.
+If Plasma is already running an older copy, run `plasmashell --replace &` after upgrading so the new QML loads.
 
-**Calendar system and date offset are shared with the panel clock**, stored in `~/.config/plasma_calendar_alternatecalendar`. Almanac does not overwrite that file on install. Changing the setting affects every widget using the plugin. On a system without a saved Chinese preference, select Chinese in settings. Widget-local calendar systems and multiple alternate rows are outside v1.
+## Settings
 
-## Develop and verify
+**General:**
+- theme: System, Light or Dark
+- desktop opacity
+- alternate date size
+- week numbers
+- keep the panel popup open
+
+**Calendar system** is Plasma's own plugin page. The calendar system and date offset are stored in `~/.config/plasma_calendar_alternatecalendar`. That file is **shared with the panel clock**, so changing it there changes both.
+
+## How it works
+
+`contents/ui/CalendarView.qml` draws the grid itself on top of `org.kde.plasma.workspace.calendar`'s `Calendar` backend and `DaysModel`. Alternate labels come from an `EventPluginsManager` that has only `alternatecalendar` enabled. Rollover decisions live in `contents/ui/rollover.js`.
+
+## Develop and package
 
 ```sh
-make test        # offscreen unit and real Plasma calendar/config integration tests
-make lint        # Qt qmllint; requires Plasma/Kirigami QML imports
-make package     # dist/almanac.plasmoid
-make screenshots # regenerate dark/light screenshots from the real QML view
+make test         # qmltestrunner, offscreen, with throwaway config and cache dirs
+make lint         # qmllint
+make package      # dist/almanac.plasmoid
+make install      # package, then install or upgrade with kpackagetool6
+make screenshots  # re-render docs/screenshots offscreen
 ```
 
-Qt tools are resolved from PATH with `/usr/lib/qt6/bin` fallbacks. Tests use disposable configuration and cache directories, a Chinese calendar preference, and software rendering; they do not alter desktop settings. CI uses Arch Linux for Plasma 6 tooling. Release tags `v*` build the plasmoid archive.
+The integration test advances a fake clock and checks:
+- the selection follows today across midnight
+- a manual pick survives a month change
+- **Today** resumes following
+- the footer shows `丙午八月廿四` for 4 October 2026
 
-The integration test injects `CalendarView.clockSource`, advances the date, verifies selection and highlight dates, clicks a real calendar cell, checks the visible month stays selected, and clicks the native Today button to resume following. It also verifies `丙午八月廿四` for 4 October 2026 and loads the plugin's config UI through `EventPluginsManager.model`. Screenshots are offscreen renders of this same view rather than desktop captures.
+## Uninstall
 
-After installation, verify desktop resizing, lunar cell labels, navigation, the config dialog's Apply action, and panel popup pinning in your Plasma session.
+```sh
+kpackagetool6 --type Plasma/Applet --remove io.github.xiahongze.almanac
+```
 
-Licensed under MIT. Plasma's calendar implementation and plugin remain supplied by KDE and are not bundled.
+## Credits
+
+Calendar backend and alternate-calendar plugin by KDE. They are used from the system install and are not bundled. Licensed under MIT.
