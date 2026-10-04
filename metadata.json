@@ -1,0 +1,20 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "Hongze Xia"
+      }
+    ],
+    "Category": "Date and Time",
+    "Description": "A desktop calendar with Gregorian and alternate calendar dates",
+    "Icon": "view-calendar",
+    "Id": "io.github.xiahongze.almanac",
+    "License": "MIT",
+    "Name": "Almanac",
+    "Version": "0.1.0",
+    "Website": "https://github.com/xiahongze/almanac"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "X-Plasma-MainScript": "ui/main.qml"
+}
