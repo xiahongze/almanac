@@ -51,6 +51,7 @@ PlasmoidItem {
         themeMode: Plasmoid.configuration.themeMode
         desktopOpacity: Plasmoid.configuration.desktopOpacity
         showWeekNumbers: Plasmoid.configuration.showWeekNumbers
+        alternateTextScale: Plasmoid.configuration.alternateTextScale
         pinned: Plasmoid.configuration.pin
         onPinToggled: Plasmoid.configuration.pin = !Plasmoid.configuration.pin
     }

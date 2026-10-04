@@ -11,10 +11,12 @@ ColumnLayout {
     property alias cfg_themeMode: theme.currentValue
     property alias cfg_desktopOpacity: opacitySlider.value
     property alias cfg_showWeekNumbers: weeks.checked
+    property alias cfg_alternateTextScale: altScale.value
     property alias cfg_pin: pin.checked
     property string cfg_themeModeDefault: "system"
     property int cfg_desktopOpacityDefault: 85
     property bool cfg_showWeekNumbersDefault: false
+    property int cfg_alternateTextScaleDefault: 80
     property bool cfg_pinDefault: false
     readonly property bool calendarConfigReady: calendarConfig.status === Loader.Ready
     signal configurationChanged()
@@ -44,6 +46,16 @@ ColumnLayout {
             from: 10
             to: 100
             stepSize: 5
+        }
+        RowLayout {
+            Kirigami.FormData.label: i18n("Alternate date size:")
+            Controls.Slider {
+                id: altScale
+                from: 50
+                to: 120
+                stepSize: 5
+            }
+            Controls.Label { text: i18n("%1%", altScale.value) }
         }
         Controls.CheckBox { id: weeks; text: i18n("Show week numbers") }
         Controls.CheckBox { id: pin; text: i18n("Keep panel popup open") }
